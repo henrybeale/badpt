@@ -9,13 +9,13 @@ gam = linspace(.3, .7, 15);  % guess rate
 % create a discrete stimulus space
 stim = linspace(.1, .8, 120);
 
-% load the Badpt class and pass through the . it will take some time to
-% compute the likelihood of each stimulus value under all combinations of
-% the parameters
+% load the Badpt class and pass through the parameters. it will take some 
+% time to compute the likelihood of each stimulus value under all 
+% combinations of the parameters.
 B = Badpt('parms', {'thr', thr, 'slo', slo, 'lam', lam, 'gam', gam}, ...
             'stim', stim);
 
-% the class has it's own function that will save the precomputed lieklihood
+% the class has it's own function that will save the precomputed likelihood
 % space, so that it can just be loaded on every new session. (note this is
 % needed as a starting place for the algorithm and contains no updated info
 % from each subject).
@@ -29,7 +29,7 @@ save(B, './data/precompBadpt1.mat')
 %% usage on each trial
 % before starting anything you can select a stimulus value that will be
 % informative. it does this by looking ahead at each of the possible
-% stimulus values and the one that results in the most informative change
+% stimulus values and choosing the one that gives the most informative change
 % in posterior (averaging over either response outcome, hit/miss). for this
 % reason, it can take time (~1s) depending on the size of the parameter and
 % stimulus space.
@@ -40,12 +40,12 @@ stimulus_value = selectStim(B);
 % can be done on each trial even after the 'titration' period has ended.
 update(B, response, stimulus_value);
 
-% you can also get an online estimate of the most probable parameters (in
-% either a described struct summary or in numeric form).
+% you can then get an online estimate of the most probable parameters (in
+% either a described struct summary or in numeric form). this is worth tracking and saving externally as the class has no logging capabilities (yet).
 [struct_summary, parameter_array] = estimateParms(B);
 
 %% marginalising parameters
-% you can choose to marginalise certain parameters 
+% you can choose to marginalise certain parameters by including their names like this:
 stimulus_value = selectStim(B, {'lam', 'gam'});
 
 %% transferring the updated posterior between sessions
@@ -54,9 +54,9 @@ stimulus_value = selectStim(B, {'lam', 'gam'});
 posterior = B.p;
 save('./sub-01/posterior_ses-01.mat', 'posterior')
 
-% and then load it to continue updating it in a new session 
+% in a new session you could reload the previous posterior to continue updating
 load('./sub-01/posterior_ses-01.mat', 'posterior')
-B.p = posterior;
+B.p = posterior;  % place into the initialised matlab class
 
 % if you have loaded this but want to reset the prior to be uniform then
 % run this: 
