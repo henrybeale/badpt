@@ -1,6 +1,6 @@
 # badpt
 
-Here lies code to implement a Bayesian parameter search for the contrast psychometric function. This relies on a look ahead algorithm that finds the ideal stimulus level to present on the next trial. 
+Here lies code to implement an adaptive Bayesian parameter search for the contrast psychometric function. This relies on a look ahead algorithm that finds the ideal stimulus level to present on the next trial. 
 
 The code is implemented in a matlab class, see `example.m` for usage.
 
