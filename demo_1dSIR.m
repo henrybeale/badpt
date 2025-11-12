@@ -12,7 +12,7 @@ plot(x,y)
 X = linspace(-2,2,60);  % discrete stimuli chosen by the algorithm
 Y = [0, 1];  % response options
 
-% sample from prior
+% sample starting particles
 N = 5e4; 
 slope_limits = [log(.1), log(20)];
 
@@ -23,6 +23,9 @@ th.lapse = rand(N,1)*.3;
 
 S = adaptive_1dSIR('N',N,'theta',th,'X',X,'Y',Y,'likfun',@psycfun_2afc)
 save(S, './tmp')
+
+% or if saved already, just load it: 
+S = adaptive_1dSIR('load', './tmp')
 
 plot_start_particles(S)
 
@@ -43,8 +46,7 @@ for n = 1:niter
     % prior to trial: select adaptive stimulus
     [x] = selectStim(S);  % adaptive look-ahead finds most informative stimulus
     % stim(n) = x;
-
-   
+    
     % evalute true psyc func
     [~,p] = psycfun_2afc([], stim(n), true_param);
     y(n) = binornd(1, p);  % draw random value

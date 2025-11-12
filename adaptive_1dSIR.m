@@ -18,6 +18,7 @@ classdef adaptive_1dSIR < handle
         theta
         liks
         dims
+        num_params
 
         stats
         plots
@@ -37,20 +38,23 @@ classdef adaptive_1dSIR < handle
             else
                 % handle a new set of samples
                 obj.theta.names = fieldnames(obj.theta);  % get names from struct
-                for k = 1:numel(obj.theta.names)  % compile into new mat
+                obj.num_params = numel(obj.theta.names);
+                for k = 1:obj.num_params  % compile into new mat
                     obj.parts(:,k) = obj.theta.(obj.theta.names{k});
                 end
 
                 % size of stimuli x responses x conditions x particles
+                obj.N = size(obj.parts,1);
                 obj.dims = [numel(obj.X),numel(obj.Y),obj.ncond,obj.N];
-
+                
                 disp('Computing likelihoods. This may take time ...'); tic;
                 precomputeLikelihood(obj);
                 toc
             end
 
             % reset weights
-            obj.w = 1./ones(obj.N,1);
+            % obj.w = 1./ones(obj.N,1);
+            obj.w = ones(obj.N,1)./ obj.N;
         end
 
         function precomputeLikelihood(obj)
@@ -123,7 +127,7 @@ classdef adaptive_1dSIR < handle
 
             % find the stim array corresponding to stimuli
             [~,stim_ind] = min(abs(obj.X-x));
-            resp_ind = find(y == obj.Y);
+            [~,resp_ind] = min(abs(obj.Y-y));
 
             % update particle weights
             obj.w = squeeze(obj.liks(stim_ind,resp_ind,cond,:)).*obj.w;
@@ -139,13 +143,15 @@ classdef adaptive_1dSIR < handle
 
         function calc_stats(obj)
             % some stats that can be helpful
-            obj.stats.entropy = -sum(obj.w.*log(obj.w));
+            mask = obj.w>0;
+            obj.stats.entropy = -sum(obj.w(mask).*log(obj.w(mask)+eps));  % mask zeros and add small num to log (to avoid nan)
             obj.stats.neff = 1./sum(obj.w.^2);
         end
 
         function est = estimate(obj)
             % return parameter means using particle weights
             est = obj.w'*obj.parts;
+
         end
 
         function [samples, sampleinds] = sample(obj, N)
@@ -162,7 +168,8 @@ classdef adaptive_1dSIR < handle
 
             [obj.parts, inds] = sample(obj, N);
             obj.liks = obj.liks(:,:,:,inds);
-            obj.w = 1./ones(length(inds),1); % reset weights to uniform
+            % obj.w = 1./ones(length(inds),1); % reset weights to uniform
+            obj.w = ones(N,1)./ N;
             obj.N = length(obj.w);
         end        
 
