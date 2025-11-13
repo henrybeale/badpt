@@ -64,7 +64,12 @@ for n = 1:n_trials
         stim(n) = selectStim(S);  % adaptive stimulus selection
     else
         % use another procedure for stimulus 
-        stim(n) = rand;
+        if mod(n,2)  % every second trial present a stimulus
+            params = estimate(S); 
+            stim(n) = params(1);  % use current threshold
+        else
+            stim(n) = 0;  % stimulus absent
+        end
     end
 
     % trial presentation and response collection here ... 
