@@ -1,6 +1,11 @@
 % particle filter with resampling, for use where certain parameters vary
 % by categorical condition
 
+%dev notes: 
+% currently handles categorical conditional variable, but future
+% implementations could quantise a continuous conditional variable, as is
+% done for X and Y. 
+
 classdef adaptive_1dSIR < handle
     properties
         N = 5e2
@@ -9,6 +14,7 @@ classdef adaptive_1dSIR < handle
         X
         Y
         ncond = 1
+        conds = [1]
         parts
         likfun
 
@@ -43,9 +49,12 @@ classdef adaptive_1dSIR < handle
                     obj.parts(:,k) = obj.theta.(obj.theta.names{k});
                 end
 
+                % infer the number of conds from input
+                obj.ncond = max(numel(obj.conds),1);
+
                 % size of stimuli x responses x conditions x particles
                 obj.N = size(obj.parts,1);
-                obj.dims = [numel(obj.X),numel(obj.Y),obj.ncond,obj.N];
+                obj.dims = [numel(obj.X),numel(obj.Y),obj.ncond,obj.N];  % creates empty 1d if ncond=1
                 
                 disp('Computing likelihoods. This may take time ...'); tic;
                 precomputeLikelihood(obj);
@@ -53,7 +62,6 @@ classdef adaptive_1dSIR < handle
             end
 
             % reset weights
-            % obj.w = 1./ones(obj.N,1);
             obj.w = ones(obj.N,1)./ obj.N;
         end
 
@@ -64,6 +72,7 @@ classdef adaptive_1dSIR < handle
             parts = obj.parts;
             dims = obj.dims;
             likfun = obj.likfun;
+            conds = obj.conds;
 
             liks = zeros(prod(dims),1);  % flattened array
 
@@ -74,12 +83,12 @@ classdef adaptive_1dSIR < handle
                 
                 % pull out stimulus and response for this iter
                 [x, y] = deal(X(ix{1}), Y(ix{2})); 
-                cond = ix{3};
+                cond_ix = ix{3};
                 param = parts(ix{4},:);
             
                 % evalute likelihood
                 if obj.ncond > 1
-                    liks(k) = likfun(y,x,param,cond);
+                    liks(k) = likfun(y,x,param,conds(cond_ix));
                 else
                     liks(k) = likfun(y,x,param);
                 end
@@ -91,7 +100,10 @@ classdef adaptive_1dSIR < handle
         function [x] = selectStim(obj,futurecond)
             % compatibility with no conditions
             if nargin == 1 
-                futurecond = 1; 
+                futurecond = 1;  % default index into empty 1d of `liks`
+            else
+                assert(any(futurecond==obj.conds), 'invalid future condition')
+                futurecond = find(obj.conds==futurecond);  % convert to index
             end
 
             t0 = tic;
@@ -123,6 +135,9 @@ classdef adaptive_1dSIR < handle
             % compatibility with no conditions
             if nargin < 4 || isempty(cond)
                 cond = 1; 
+            else
+                assert(any(cond==obj.conds), 'wrong cond input')
+                cond = find(cond==obj.conds);  % convert to index
             end
 
             % find the stim array corresponding to stimuli
@@ -131,7 +146,7 @@ classdef adaptive_1dSIR < handle
 
             % update particle weights
             obj.w = squeeze(obj.liks(stim_ind,resp_ind,cond,:)).*obj.w;
-            obj.w = 1/sum(obj.w)*obj.w;  % normalise
+            obj.w = obj.w/sum(obj.w);  % normalise
             
             calc_stats(obj)  % keep neff, entropy updated
 

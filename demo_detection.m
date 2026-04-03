@@ -4,7 +4,7 @@
 
 %% let's inspect the psychometric function used in detection
 % ground truth parameters for simulation
-true_param = [0.2, log(3), 1.8, 0.05]; % [threshold, log slope, criterion, lapse rate]
+true_param = [0.2, log(3), 3, 0.05]; % [threshold, log(slope), criterion, lapse rate]
 
 % function
 targD = 1.5;  % optional; get contrast for a specific d' value
@@ -15,14 +15,15 @@ clf
 nexttile
 plot(x,y)
 title('Psychometric function'); ylabel('Prop. correct')
+ylim([0,1])
 
 nexttile
 plot(x,d)
 title("d'"); ylabel("d'"); xlabel('Contrast')
 
 %% (1) SETUP the adaptive particle filter 
-% we first need setup the stimulus and response values 
-X = linspace(0, 1, 100);   % stimuli
+% we first need to setup the stimulus and response values 
+X = linspace(0, 1, 100);   % stimuli (discrete grid)
 Y = [0, 1];  % response outcomes 
 
 % then draw some starting particles for the algorithm
@@ -47,8 +48,9 @@ S = adaptive_1dSIR('load', './detection_particles')
 plot_start_particles(S)
 
 %% (2) RUN on simulated responses
+% setup:
 n_trials = 300; 
-n_adaptive_trials = 100;  % these are your 'staircase' trials
+n_adaptive_trials = 100;  % how many 'staircase' trials to use at the start
 stim = nan(1,n_trials);
 resp = nan(1,n_trials);
 
